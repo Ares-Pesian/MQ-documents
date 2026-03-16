@@ -1432,6 +1432,9 @@ When building any dashboard page or component, Claude must:
 ✅  Color palette:      Locked in Design System section
 ✅  Layout:             Dark theme, left sidebar + top nav, responsive
 ✅  Light mode:         Toggle in profile dropdown
+✅  Business model:     SaaS now, self-hosted licensed after 10 clients
+✅  Hosting:            AWS, your infrastructure, subdomain per tenant
+✅  AWS cost (launch):  ~$1,500/month (6 clients, 105K accounts)
 ```
 
 ---
@@ -1450,3 +1453,110 @@ Correct order:
 6. Freeze MT5 raw schema from actual data
 7. Only then move to MT4, cTrader, FXBO
 ```
+
+---
+
+## Business Model & Deployment Strategy
+
+### Current model: SaaS (Phase 1 — up to 10 clients)
+
+```
+AI FXDealer hosted on AWS (your infrastructure)
+Each broker/prop firm = one tenant, isolated by broker_id
+Broker accesses via subdomain: broker-name.fxdealer.com
+You manage all infrastructure, updates, monitoring
+Broker pays monthly subscription
+```
+
+Pricing reference points for this market:
+```
+Prop firms (5K accounts):      $500  – $1,500 / month
+Small brokers (30K accounts):  $1,500 – $3,000 / month
+```
+
+AWS cost at launch (6 clients):
+```
+Compute (EC2):          ~$615/month
+Database (RDS+Redis):   ~$530/month
+Storage + transfer:     ~$95/month
+Supporting services:    ~$55/month
+Total:                  ~$1,500/month
+```
+
+Gross margin at 6 clients:
+```
+At $1,000/client avg:  $6,000 revenue  →  75% margin
+At $2,000/client avg:  $12,000 revenue →  87.5% margin
+```
+
+Cost scaling:
+```
+6  clients / 105K accounts →  ~$1,500/month AWS
+15 clients / 300K accounts →  ~$2,800/month AWS
+30 clients / 600K accounts →  ~$4,500/month AWS
+50 clients / 1M+  accounts →  ~$7,000/month AWS
+```
+
+### Future model: Self-Hosted Licensed (after 10 clients)
+
+```
+Trigger: client count exceeds 10, or first regulated broker requires it
+
+- Broker provides their own server
+- You provide installation package + license key
+- License validated against your license server on startup
+- Platform refuses to start without valid license
+- Broker's data never leaves their infrastructure
+- Premium pricing: one-time license + annual support/update contract
+```
+
+Codebase flag — design for it now, build it later:
+```
+DEPLOYMENT_MODE=saas          ← current, multi-tenant, your AWS
+DEPLOYMENT_MODE=selfhosted    ← future, single-tenant, broker's server
+```
+
+Both modes share the same codebase. Do NOT build self-hosted mode yet.
+Keep tenant isolation clean and startup config flexible so it can be
+added without major refactoring.
+
+### Subdomain model per tenant
+
+```
+app.fxdealer.com                ← marketing / login
+broker-alpha.fxdealer.com       ← Broker Alpha dashboard
+prop-firm-beta.fxdealer.com     ← Prop Firm Beta dashboard
+```
+
+DNS via Route 53. Each subdomain resolves broker_id at auth middleware.
+No broker can access another broker's subdomain.
+
+---
+
+## Infrastructure — AWS at Launch
+
+```
+Service                   Instance      OS        Count   $/month
+──────────────────────────────────────────────────────────────────
+API service               t3.medium     Linux     2       $60
+Dashboard (Next.js)       t3.small      Linux     1       $15
+Rule engine               t3.large      Linux     1       $60
+MT5 collectors            t3.medium     Windows   6       $210
+MT4 collectors            t3.medium     Windows   3       $105
+cTrader collectors        t3.small      Linux     3       $45
+FXBO collectors           t3.small      Linux     6       $90
+Market data collector     t3.small      Linux     1       $15
+Grafana + Prometheus      t3.small      Linux     1       $15
+──────────────────────────────────────────────────────────────────
+RDS PostgreSQL+Timescale  r6g.xlarge    -         1+1AZ   $380
+ElastiCache Redis         r6g.large     -         2 node  $150
+──────────────────────────────────────────────────────────────────
+ALB, Route 53, CloudFront, Secrets, S3, CloudWatch              $150
+──────────────────────────────────────────────────────────────────
+TOTAL                                                     ~$1,500
+```
+
+Windows collector note: MT4/MT5 Manager API are Windows-only.
+collector-mt4 and collector-mt5 run on Windows EC2 (cost ~40% more).
+Optimization for Phase 2+: consolidate multiple broker collectors
+onto fewer Windows instances. Do not over-optimize in Phase 1.
