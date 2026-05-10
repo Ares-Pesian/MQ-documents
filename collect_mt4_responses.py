@@ -1,9 +1,6 @@
 """
 MT4 Manager API - Complete Python ctypes Wrapper & Endpoint Explorer
 =====================================================================
-Server : 88.218.200.140:443
-Login  : 52
-Pass   : Vista1234$
 
 REQUIRES: mtmanapi64.dll (64-bit Python) OR mtmanapi.dll (32-bit Python)
   - Download from: https://developers.metaquotes.net  (MT4 Manager API SDK)
