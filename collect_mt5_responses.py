@@ -15,10 +15,10 @@ if sys.stdout.encoding != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 # -- credentials --------------------------------------------------------------
-SERVER   = "157.180.9.122:443"
-LOGIN    = 1036
-PASSWORD = "Vista1234$"
-TIMEOUT  = 60_000   # ms
+SERVER   = ""
+LOGIN    = 
+PASSWORD = ""
+TIMEOUT  =  # ms
 
 DOCS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs", "mt5-endpoints")
 os.makedirs(DOCS_DIR, exist_ok=True)
