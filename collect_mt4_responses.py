@@ -31,9 +31,6 @@ import socket
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-SERVER   = "88.218.200.140:443"
-LOGIN    = 52
-PASSWORD = "Vista1234$"
 
 DOCS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                         "docs", "mt4-endpoints")
